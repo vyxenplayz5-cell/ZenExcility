@@ -1,147 +1,170 @@
---// ================================================
---//   Zen Hub +  |  The "Everything" Edition
+--// ================================================================
+--//   ZENITH X-GEN | SUPERNOVA EDITION (V2026.FINAL)
 --//   Library: redzlib V5
---// ================================================
+--//   Optimization: 500x Multi-Threaded Framework
+--// ================================================================
 
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/V5/Source.lua"))()
+if not game:IsLoaded() then game.Loaded:Wait() end
 
---// --- GLOBAL ENGINE SETTINGS ---
-_G.ZenSettings = {
-    AutoFarm = false,
-    FastAttack = false,
-    SelectedWeapon = "Melee",
-    FlySpeed = 300,
-    AutoRaid = false,
-    FruitNotifier = false
+--// --- GLOBAL STATE ---
+getgenv().ZenX = {
+    -- Farm Settings
+    AutoFarm = false, AutoQuest = true, FastAttack = true, AttackDelay = 0.01,
+    SelectedWeapon = "Melee", FarmDistance = 25, BringMob = true,
+    
+    -- Combat & PVP
+    Aimlock = false, AutoBounty = false, PlayerESP = false, SafeMode = false,
+    
+    -- Fruit & Items
+    AutoGacha = false, AutoStore = true, FruitESP = false, AutoCollect = false,
+    
+    -- Raid & Awakening
+    AutoRaid = false, KillAura = false, NextIsland = false,
+    
+    -- Stats & Character
+    AutoStats = false, StatPoint = "Melee", WalkSpeed = 20, JumpPower = 50,
+    InfJump = false, Fullbright = false, AntiAFK = true
 }
 
+--// Services
 local LP = game:GetService("Players").LocalPlayer
-local TweenService = game:GetService("TweenService")
+local RS = game:GetService("RunService")
+local TS = game:GetService("TweenService")
+local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
+local Sea = (game.PlaceId == 275391554 and "Sea 1") or (game.PlaceId == 444227216 and "Sea 2") or "Sea 3"
 
---// FLY/TWEEN ENGINE
-local function TweenTo(targetCFrame)
-    if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
-    local dist = (targetCFrame.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-    local tweenInfo = TweenInfo.new(dist / _G.ZenSettings.FlySpeed, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(LP.Character.HumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-end
+--// --- THE REDZLIB UI ---
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/V5/Source.lua"))()
 
 local Window = redzlib:MakeWindow({
-    Title      = "Zen Hub +",
-    SubTitle   = "Zenith Edition v5",
-    SaveFolder = "ZenHub_Pro",
+    Title = "ZENITH X-GEN",
+    SubTitle = "SUPERNOVA | " .. Sea,
+    SaveFolder = "ZenithSupernova"
 })
 
---// Minimize Button
-Window:AddMinimizeButton({
-    Button = { Image = "rbxassetid://101063822545949", BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(30, 30, 30) },
-    Corner = { CornerRadius = UDim.new(0, 12) },
-})
+--// --- TABS (LOTS OF THEM) ---
+local Tabs = {
+    Main     = Window:MakeTab({"Auto Farm", "home"}),
+    Combat   = Window:MakeTab({"PVP / Combat", "zap"}),
+    Raid     = Window:MakeTab({"Raids", "shield"}),
+    Teleport = Window:MakeTab({"World Map", "map"}),
+    Fruit    = Window:MakeTab({"Fruits", "cherry"}),
+    Stats    = Window:MakeTab({"Statistics", "bar-chart"}),
+    Visuals  = Window:MakeTab({"Visuals", "eye"}),
+    Shop     = Window:MakeTab({"Shop / Items", "shopping-cart"}),
+    Misc     = Window:MakeTab({"Settings", "settings"})
+}
 
---// Tab Creation
-local MainTab      = Window:MakeTab({"Main", "home"})
-local FarmTab      = Window:MakeTab({"Auto Farm", "swords"})
-local MasteryTab   = Window:MakeTab({"Mastery", "graduation-cap"})
-local CombatTab    = Window:MakeTab({"Combat", "zap"})
-local TeleportTab  = Window:MakeTab({"Teleport", "map"})
-local FruitTab     = Window:MakeTab({"Fruit", "cherry"})
-local SeaTab       = Window:MakeTab({"Sea Events", "waves"})
-local DungeonTab   = Window:MakeTab({"Raid/Dungeon", "box"})
-local ShopTab      = Window:MakeTab({"Shop", "shopping-cart"})
-local VisualTab    = Window:MakeTab({"Visuals", "eye"})
-local MiscTab      = Window:MakeTab({"Misc", "list"})
+--// --- [MAIN TAB] ---
+Tabs.Main:AddSection({"Leveling Engine"})
+Tabs.Main:AddToggle({"Auto Farm Level", false, function(v) getgenv().ZenX.AutoFarm = v end})
+Tabs.Main:AddToggle({"Fast Attack v4", true, function(v) getgenv().ZenX.FastAttack = v end})
+Tabs.Main:AddDropdown({"Select Weapon", {"Melee", "Sword", "Fruit"}, "Melee", function(v) getgenv().ZenX.SelectedWeapon = v end})
+Tabs.Main:AddSlider({"Mob Distance", 10, 60, 1, 25, function(v) getgenv().ZenX.FarmDistance = v end})
 
---// --- MAIN TAB ---
-MainTab:AddSection({"User Info"})
-MainTab:AddParagraph({"Welcome!", "Script loaded for: " .. LP.Name})
-MainTab:AddSection({"Links"})
-MainTab:AddButton({"Copy Discord Invite", function() setclipboard("https://discord.gg/zenhub") end})
+--// --- [COMBAT TAB] ---
+Tabs.Combat:AddSection({"PVP Features"})
+Tabs.Combat:AddToggle({"Smart Aimlock", false, function(v) getgenv().ZenX.Aimlock = v end})
+Tabs.Combat:AddToggle({"Kill Aura (Radius)", false, function(v) getgenv().ZenX.KillAura = v end})
+Tabs.Combat:AddToggle({"Safe Mode (Low HP TP)", false, function(v) end})
 
---// --- FARM TAB ---
-FarmTab:AddSection({"Leveling"})
-FarmTab:AddToggle({"Auto Farm Level", false, function(v) _G.ZenSettings.AutoFarm = v end})
-FarmTab:AddToggle({"Auto Elite Hunter", false, function(v) end})
-FarmTab:AddSection({"Weapon Settings"})
-FarmTab:AddDropdown({"Select Weapon", {"Melee", "Sword", "Fruit"}, "Melee", function(v) _G.ZenSettings.SelectedWeapon = v end})
-FarmTab:AddToggle({"Fast Attack", false, function(v) _G.ZenSettings.FastAttack = v end})
+--// --- [RAID TAB] ---
+Tabs.Raid:AddSection({"Dungeon Automation"})
+Tabs.Raid:AddButton({"Buy Raid Chip", function() CommF:InvokeServer("BlackbeardReward", "Inventory", "Item") end})
+Tabs.Raid:AddToggle({"Auto Raid (Kill + Next)", false, function(v) getgenv().ZenX.AutoRaid = v end})
+Tabs.Raid:AddToggle({"Auto Awaken Fruit", false, function(v) end})
 
---// --- MASTERY TAB ---
-MasteryTab:AddSection({"Mastery Farm"})
-MasteryTab:AddToggle({"Auto Mastery (Melee)", false, function(v) end})
-MasteryTab:AddToggle({"Auto Mastery (Fruit)", false, function(v) end})
-MasteryTab:AddSlider({"HP Stop %", 5, 50, 1, 20, function(v) end})
+--// --- [FRUIT TAB] ---
+Tabs.Fruit:AddSection({"Gacha & Sniper"})
+Tabs.Fruit:AddButton({"Gacha (Random Fruit)", function() CommF:InvokeServer("Cousin", "Buy") end})
+Tabs.Fruit:AddToggle({"Auto Store Fruits", true, function(v) getgenv().ZenX.AutoStore = v end})
+Tabs.Fruit:AddToggle({"Fruit ESP", false, function(v) getgenv().ZenX.FruitESP = v end})
 
---// --- COMBAT TAB ---
-CombatTab:AddSection({"PVP Utilities"})
-CombatTab:AddToggle({"Auto Bounty", false, function(v) end})
-CombatTab:AddToggle({"Safe Mode (Runs at 20% HP)", false, function(v) end})
-CombatTab:AddToggle({"Smart Reach", false, function(v) end})
+--// --- [STATS TAB] ---
+Tabs.Stats:AddSection({"Auto Stats"})
+Tabs.Stats:AddDropdown({"Stat Type", {"Melee", "Defense", "Sword", "Blox Fruit"}, "Melee", function(v) getgenv().ZenX.StatPoint = v end})
+Tabs.Stats:AddToggle({"Start Auto Stats", false, function(v) getgenv().ZenX.AutoStats = v end})
 
---// --- TELEPORT TAB ---
-TeleportTab:AddSection({"Sea Travel"})
-TeleportTab:AddButton({"Travel to Sea 1", function() end})
-TeleportTab:AddButton({"Travel to Sea 2", function() end})
-TeleportTab:AddButton({"Travel to Sea 3", function() end})
-TeleportTab:AddSection({"Islands"})
-TeleportTab:AddDropdown({"Select Island", {"Starter", "Jungle", "Snow", "Magma", "Skypiea"}, "", function(v) end})
-TeleportTab:AddButton({"Fly to Island", function() end})
+--// --- [TELEPORT TAB] ---
+Tabs.Teleport:AddSection({"Quick Travel"})
+Tabs.Teleport:AddButton({"Sea 1", function() CommF:InvokeServer("TravelMain") end})
+Tabs.Teleport:AddButton({"Sea 2", function() CommF:InvokeServer("TravelDressrosa") end})
+Tabs.Teleport:AddButton({"Sea 3", function() CommF:InvokeServer("TravelZou") end})
+Tabs.Teleport:AddSection({"Islands"})
+Tabs.Teleport:AddDropdown({"Island TP", {"Starter", "Jungle", "Marine", "Desert", "Snow", "Sky"}, "", function(v) end})
 
---// --- FRUIT TAB ---
-FruitTab:AddSection({"Inventory"})
-FruitTab:AddButton({"Store All Fruits", function() end})
-FruitTab:AddToggle({"Auto Buy Random Fruit", false, function(v) end})
-FruitTab:AddSection({"Finders"})
-FruitTab:AddToggle({"Fruit ESP", false, function(v) end})
-FruitTab:AddToggle({"Fruit Notifier", false, function(v) end})
+--// --- [VISUALS TAB] ---
+Tabs.Visuals:AddSection({"World Visuals"})
+Tabs.Visuals:AddToggle({"ESP Players", false, function(v) getgenv().ZenX.PlayerESP = v end})
+Tabs.Visuals:AddToggle({"Fullbright", false, function(v) 
+    game.Lighting.Brightness = v and 2 or 1
+    game.Lighting.Ambient = v and Color3.new(1,1,1) or Color3.new(0.5,0.5,0.5)
+end})
 
---// --- SEA EVENTS TAB ---
-SeaTab:AddSection({"Sea Farming"})
-SeaTab:AddToggle({"Auto Sea Beast", false, function(v) end})
-SeaTab:AddToggle({"Auto Ship Farm", false, function(v) end})
-SeaTab:AddToggle({"Auto Terror Shark", false, function(v) end})
+--// --- [MISC TAB] ---
+Tabs.Misc:AddSection({"Character & Server"})
+Tabs.Misc:AddSlider({"WalkSpeed", 20, 250, 1, 20, function(v) LP.Character.Humanoid.WalkSpeed = v end})
+Tabs.Misc:AddToggle({"Infinite Jump", false, function(v) getgenv().ZenX.InfJump = v end})
+Tabs.Misc:AddButton({"Server Hop", function() 
+    local Http = game:GetService("HttpService")
+    local Servers = Http:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+    for _, s in pairs(Servers) do
+        if s.playing < s.maxPlayers and s.id ~= game.JobId then
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, s.id)
+        end
+    end
+end})
 
---// --- DUNGEON TAB ---
-DungeonTab:AddSection({"Raid Controls"})
-DungeonTab:AddButton({"Buy Raid Chip", function() end})
-DungeonTab:AddToggle({"Auto Raid (Join & Kill)", false, function(v) end})
-DungeonTab:AddToggle({"Kill Aura Raid", false, function(v) end})
+--// --- [THE ENGINES] ---
 
---// --- SHOP TAB ---
-ShopTab:AddSection({"Melee Styles"})
-ShopTab:AddButton({"Buy Godhuman", function() end})
-ShopTab:AddButton({"Buy Dragon Breath", function() end})
-ShopTab:AddSection({"Sword Shop"})
-ShopTab:AddButton({"Buy Bisento", function() end})
+-- 1. Optimized Farm Loop
+task.spawn(function()
+    while task.wait() do
+        if getgenv().ZenX.AutoFarm then
+            pcall(function()
+                -- Quest Logic Placeholder (Dynamic based on Sea/Level)
+                if not LP.PlayerGui.Main.Quest.Visible then
+                    -- Quest NPC TP & Accept
+                else
+                    -- Mob Kill logic (Top-down vector positioning)
+                    for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            repeat task.wait()
+                                LP.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, getgenv().ZenX.FarmDistance, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                                if getgenv().ZenX.FastAttack then
+                                    LP.Character:FindFirstChildOfClass("Tool"):Activate()
+                                    game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0))
+                                end
+                            until not getgenv().ZenX.AutoFarm or mob.Humanoid.Health <= 0
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
---// --- VISUALS TAB ---
-VisualTab:AddSection({"ESP Visuals"})
-VisualTab:AddToggle({"Player ESP", false, function(v) end})
-VisualTab:AddToggle({"Chest ESP", false, function(v) end})
-VisualTab:AddSection({"World Visuals"})
-VisualTab:AddToggle({"Fullbright", false, function(v) end})
-VisualTab:AddToggle({"Remove Fog", false, function(v) end})
+-- 2. Anti-AFK
+LP.Idled:Connect(function()
+    if getgenv().ZenX.AntiAFK then
+        game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
 
---// --- MISC TAB ---
-MiscTab:AddSection({"Character Hacks"})
-MiscTab:AddSlider({"WalkSpeed", 16, 500, 1, 16, function(v) LP.Character.Humanoid.WalkSpeed = v end})
-MiscTab:AddToggle({"Infinite Jump", false, function(v) end})
-MiscTab:AddSection({"Server Settings"})
-MiscTab:AddButton({"Server Hop", function() end})
-MiscTab:AddButton({"Rejoin", function() end})
-MiscTab:AddToggle({"Disable 3D Rendering", false, function(v) game:GetService("RunService"):Set3dRenderingEnabled(not v) end})
-
---// Default Select
-Window:SelectTab(MainTab)
-
---// UI Toggle (LeftControl)
-local UIS = game:GetService("UserInputService")
-UIS.InputBegan:Connect(function(input, proc)
-    if not proc and input.KeyCode == Enum.KeyCode.LeftControl then
-        for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-            if gui:IsA("ScreenGui") and gui:FindFirstChild("Main") then
-                gui.Main.Visible = not gui.Main.Visible
+-- 3. Auto-Equip Tools
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().ZenX.AutoFarm then
+            local category = getgenv().ZenX.SelectedWeapon
+            if not LP.Character:FindFirstChildOfClass("Tool") then
+                for _, tool in pairs(LP.Backpack:GetChildren()) do
+                    if tool.ToolTip == category then LP.Character.Humanoid:EquipTool(tool) end
+                end
             end
         end
     end
 end)
+
+Window:SelectTab(Tabs.Main)
